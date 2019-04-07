@@ -15,10 +15,6 @@ With one call you can generate from/to your data class objects or pojos, an Map<
 Look how this works:
 
 ```kotlin
-
-```
-
-```kotlin
 data class SimpleObject(val msg : String,
                         val number : Int)
 
@@ -48,7 +44,7 @@ Works with data class or normal class object that contains attributes of followi
 
 
 
-We are still working to make compatble with some other usefull values types , like Map<String,T>.
+We are still working to make compatible with some other usefull values types , like Map<String,T>.
 
 And for anotations that mark some of attribute to be ignored from KDynaMapper.
 
