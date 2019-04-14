@@ -7,21 +7,32 @@ import richsan.KDynaMapper
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-data class SimpleObject(val msg : String,
-                        val number : Int)
+data class SimpleObject(val msg: String,
+                        val number: Int,
+                        val listOfInts: List<Int>,
+                        val mapOfInts: Map<String, Int>)
 
 
 class LibraryTest {
     @Test fun testSomeLibraryMethod() {
-        val obj =  SimpleObject("this is a test", 42)
+        val obj =  SimpleObject(
+                "this is a test",
+                42,
+                listOf(1, 2, 4, 8),
+                mapOf("key1" to 1, "key13" to 13)
+        )
 
         val dynaMap = KDynaMapper.mapToDynamoObjectRequest(obj)
 
         assert(dynaMap["msg"]?.s() == obj.msg)
         assert(dynaMap["number"]?.n() == obj.number.toString())
+        assert(dynaMap["listOfInts"]?.l()!!.zip(obj.listOfInts).all { it.first.n().toInt() == it.second })
+        assert(dynaMap["mapOfInts"]?.m()!!.size == obj.mapOfInts.size)
+        assert(dynaMap["mapOfInts"]?.m()!!.entries.all {
+            obj.mapOfInts[it.key] == it.value.n().toInt()
+        })
 
         val newObj = KDynaMapper.fromDynamoMapResponse(dynaMap, SimpleObject::class)
-
         assert(newObj == obj)
     }
 }

@@ -2,5 +2,6 @@
 .gradle
 .idea
 out
+*.iml
 # Ignore Gradle build output directory
 build
