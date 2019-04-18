@@ -91,6 +91,11 @@ object KDynaMapper {
             return AttributeValue.builder().l(attList).build()
         }
 
+        if (objValue is Map<*, *>) {
+
+            val map = objValue.map { it.key.toString() to mapSingle(it.value) }.toMap()
+            return AttributeValue.builder().m(map).build()
+        }
 
         if (isNumberValue(objValue))
             return AttributeValue.builder().n(objValue.toString()).build()
@@ -149,16 +154,22 @@ object KDynaMapper {
             return
         }
 
+
+        if (property.returnType.jvmErasure.isSubclassOf(Map::class) && javaField != null) {
+            // due to a DynamoDB limitation, maps always have key type String
+            val valueType = property.returnType.arguments[1].type!!.jvmErasure
+            val map = attrValue.m().mapValues {
+                getValueFromAttributeValue(valueType, it.value)
+            }.toMutableMap()
+
+            javaField.set(obj, map)
+            return
+        }
+
         if (property is KMutableProperty<*>) {
             property.setter.call(obj, getValueFromAttributeValue(property.returnType.jvmErasure, attrValue))
             return
         }
-
-
-       /* val modifiersField = Field::class.java!!.getDeclaredField("modifiers")
-        modifiersField.isAccessible = true
-        if (javaField != null)
-            modifiersField.setInt(javaField, javaField.modifiers and Modifier.FINAL.inv())*/
 
         javaField?.set(obj, getValueFromAttributeValue(property.returnType.jvmErasure, attrValue))
     }
