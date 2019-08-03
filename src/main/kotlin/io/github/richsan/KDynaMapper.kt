@@ -62,10 +62,10 @@ object KDynaMapper {
         return dynamoDbRequestObj
     }
 
-    fun fromDynamoMapResponse(dynamoDbResponse: Map<String, AttributeValue>, responseClass: KClass<*>): Any {
+    fun fromDynamoMapResponse(dynamoDbResponse: Map<String, AttributeValue>, responseClass: KClass<*>): Any? {
 
-        /*if (responseClass.objectInstance != null)
-            throw Exception("Not Possible extract from object Class")    */
+        if(dynamoDbResponse.entries.isEmpty())
+            return null
 
         val objInstance = ObjenesisStd().newInstance(responseClass.java)
 
