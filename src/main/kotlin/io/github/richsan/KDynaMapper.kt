@@ -18,8 +18,6 @@ package richsan
 
 import org.objenesis.ObjenesisStd
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue
-import java.lang.reflect.Field
-import java.lang.reflect.Modifier
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.time.Instant
@@ -31,7 +29,9 @@ import kotlin.reflect.KMutableProperty
 import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.starProjectedType
+import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.jvm.javaField
+import kotlin.reflect.jvm.javaGetter
 import kotlin.reflect.jvm.jvmErasure
 
 
@@ -54,6 +54,7 @@ object KDynaMapper {
         val dynamoDbRequestObj: MutableMap<String, AttributeValue> = mutableMapOf()
 
         props.forEach {
+            it.isAccessible = true
             val objValue = it.call(objectValue)
 
             if (objValue !is Lambda<*>)
@@ -62,18 +63,23 @@ object KDynaMapper {
         return dynamoDbRequestObj
     }
 
-    fun fromDynamoMapResponse(dynamoDbResponse: Map<String, AttributeValue>, responseClass: KClass<*>): Any {
+    fun fromDynamoMapResponse(dynamoDbResponse: Map<String, AttributeValue>, responseClass: Class<out Any>): Any? {
+        if(dynamoDbResponse.entries.isEmpty())
+            return null
 
-        /*if (responseClass.objectInstance != null)
-            throw Exception("Not Possible extract from object Class")    */
-
-        val objInstance = ObjenesisStd().newInstance(responseClass.java)
+        val objInstance = ObjenesisStd().newInstance(responseClass)
 
         dynamoDbResponse.entries.forEach {
             setObjectPropertyIfExists(objInstance, it.key, it.value)
         }
 
         return objInstance
+
+    }
+
+    fun fromDynamoMapResponse(dynamoDbResponse: Map<String, AttributeValue>, responseClass: KClass<*>): Any? {
+        return fromDynamoMapResponse(dynamoDbResponse,responseClass.java)
+
     }
 
     private fun mapSingle(objValue: Any?): AttributeValue {
@@ -134,9 +140,11 @@ object KDynaMapper {
                 ?: return
 
 
+        if(attrValue.nul() != null)
+            return
+
         val javaField = property.javaField
         javaField?.isAccessible = true
-
 
 
         if (property.returnType.jvmErasure.isSubclassOf(List::class) && javaField != null) {
