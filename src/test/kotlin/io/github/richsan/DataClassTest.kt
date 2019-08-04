@@ -6,7 +6,6 @@ package io.github.richsan
 import io.kotlintest.properties.Gen
 import richsan.KDynaMapper
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue
-import java.lang.reflect.GenericArrayType
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.time.Instant
@@ -15,7 +14,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-data class SimpleObject(val msg : String = Gen.string().random().first(),
+data class SampleObject(val msg : String = Gen.string().random().first(),
                         val number : Int = Gen.int().random().first(),
                         val bigNum: BigInteger = Gen.bigInteger(42).random().first(),
                         val bigDec : BigDecimal = BigDecimal("424242424244242424242424242424242"),
@@ -25,7 +24,13 @@ data class SimpleObject(val msg : String = Gen.string().random().first(),
                         val floatNum: Float = Gen.float().random().first(),
                         val doubleNum: Double = Gen.double().random().first(),
                         val objList: List<Person> = Gen.list(PersonGenerator()).random().first(),
-                        val nestedObject : SimpleObject? = null
+                        val nestedObject : SampleObject? = null,
+                        val nullList: List<Int>? = null,
+                        val nullNumber: Int? = null,
+                        val nullUUID: UUID? = null,
+                        val mapStrStr: Map<String,String> = Gen.map(Gen.string(), Gen.string()).random().first(),
+                        val mapStrPerson : Map<String, Person> = mapOf("onePerson" to PersonGenerator().random().first(),
+                                "otherPerson" to  PersonGenerator().random().first())
                         )
 
 data class Person(val firstName: String = Gen.string().random().first(),
@@ -39,27 +44,27 @@ class PersonGenerator : Gen<Person> {
     }
 }
 
-class SimpleObjectGenerator : Gen<SimpleObject> {
-    override fun constants() = emptyList<SimpleObject>()
+class SimpleObjectGenerator : Gen<SampleObject> {
+    override fun constants() = emptyList<SampleObject>()
     override fun random() = generateSequence {
-        SimpleObject()
+        SampleObject()
     }
 }
 
 
 class DataClassTest {
     @Test fun testSomeDataClass() {
-        val obj = SimpleObject(nestedObject = SimpleObject())
+        val obj = SampleObject(nestedObject = SampleObject())
         val dynaMap = KDynaMapper.mapToDynamoObjectRequest(obj)
 
         validateDynaMapAgainstSimpleObject(dynaMap,obj)
-        validateDynaMapAgainstSimpleObject(dynaMap["nestedObject"]!!.m(), obj.nestedObject!!)
-        val newObj = KDynaMapper.fromDynamoMapResponse(dynaMap, SimpleObject::class)
+        validateDynaMapAgainstSimpleObject(dynaMap["nestedObject"]?.m()!!, obj.nestedObject!!)
+        val newObj = KDynaMapper.fromDynamoMapResponse(dynaMap, SampleObject::class)
 
         assertEquals(obj, newObj, "Object deserialized differs from original source object")
     }
 
-    private fun validateDynaMapAgainstSimpleObject(dynaMap : Map<String, AttributeValue>, obj: SimpleObject) {
+    private fun validateDynaMapAgainstSimpleObject(dynaMap : Map<String, AttributeValue>, obj: SampleObject) {
         assertEquals(obj.msg, dynaMap["msg"]?.s(), "Differs at msg field")
         assertEquals(obj.number.toString(), dynaMap["number"]?.n(), "Differs at number field")
         assertEquals(obj.bigNum.toString(), dynaMap["bigNum"]?.n(), "Differs at bigNum field")
@@ -69,5 +74,8 @@ class DataClassTest {
         assertEquals(obj.time.toString(), dynaMap["time"]?.s(), "Differs at time field")
         assertEquals(obj.floatNum.toString(), dynaMap["floatNum"]?.n(), "Differs at floatNum field")
         assertEquals(obj.doubleNum.toString(), dynaMap["doubleNum"]?.n(), "Differs at doubleNum field")
+        assertTrue(dynaMap["nullList"]?.nul()!!)
+        assertTrue(dynaMap["nullNumber"]?.nul()!!)
+        assertTrue(dynaMap["nullUUID"]?.nul()!!)
     }
 }
