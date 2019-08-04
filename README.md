@@ -2,8 +2,18 @@
 
 ####  The Kotlin library that makes your life easier to work with Amazon DynamoDB sdk.
 
-[![](https://jitpack.io/v/Richsan/KDynaMapper.svg)](https://jitpack.io/#Richsan/KDynaMapper)
+[![0.0.1](https://jitpack.io/v/Richsan/KDynaMapper.svg)](https://jitpack.io/#Richsan/KDynaMapper)
 
+How to Use with jitpack
+```groovy
+repositories {
+        jcenter()
+        maven { url "https://jitpack.io" }
+   }
+   dependencies {
+         implementation 'com.github.Richsan:KDynaMapper:0.0.1'
+   }
+```
 
 Are you working with DynamoDB, trying to use the java AWS SDK and having to write a lot of boilerplate to map your object from/to the boring Map<String,AttributeValue> data structure?
 
